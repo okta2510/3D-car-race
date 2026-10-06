@@ -7,6 +7,7 @@ export class RoadManager {
   private numChunks: number = 6;
   private chunks: THREE.Group[] = [];
   private roadMaterials: THREE.MeshStandardMaterial[] = [];
+  private borderLines: THREE.Mesh[] = [];
   public currentZOffset: number = 0;
 
   constructor() {
@@ -61,7 +62,7 @@ export class RoadManager {
       }
     });
 
-    // Outer Shoulder Solid Glow Lines
+    // Outer Shoulder Solid Glow Lines (Border Lines)
     const shoulderGeo = new THREE.PlaneGeometry(0.4, this.chunkLength);
     const shoulderMat = new THREE.MeshBasicMaterial({ color: 0xf43f5e });
     const shoulderLeft = new THREE.Mesh(shoulderGeo, shoulderMat);
@@ -72,6 +73,7 @@ export class RoadManager {
     shoulderRight.rotation.x = -Math.PI / 2;
     shoulderRight.position.set(this.roadWidth / 2 - 0.3, 0.02, 0);
 
+    this.borderLines.push(shoulderLeft, shoulderRight);
     chunk.add(shoulderLeft, shoulderRight);
 
     // Guard Rails (Metallic barriers along both sides)
@@ -149,6 +151,18 @@ export class RoadManager {
     this.roadMaterials.forEach(m => {
       m.roughness = roughness;
       m.metalness = metalness;
+    });
+  }
+
+  /**
+   * USER REQUIREMENT:
+   * Saat speed ramp (booster active) remove border line!
+   */
+  public setSpeedRamp(active: boolean, rampFactor: number) {
+    const isSpeedRamp = active || rampFactor > 0.05;
+    // When speed ramp is active, remove/hide border lines completely
+    this.borderLines.forEach(line => {
+      line.visible = !isSpeedRamp;
     });
   }
 }

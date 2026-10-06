@@ -15,6 +15,8 @@ export interface GameStats {
   nitro: number; // 0 - 100
   isNitroActive: boolean;
   speedRampFactor?: number; // 0.0 to 1.0 dynamic booster speed ramp
+  isOilSlipping?: boolean; // True during uncontrollable oil skid
+  oilSlipDirection?: number; // -1 = left, +1 = right
   headlightMode: 'high' | 'dim';
   weather: WeatherType;
   weatherInfo: WeatherInfo;
@@ -34,6 +36,8 @@ export class RacingEngine {
   private animFrameId: number | null = null;
   private isRunning: boolean = false;
   private speedRampFactor: number = 0; // 0.0 to 1.0 progressive surge curve
+  private speedRampStreaksGroup = new THREE.Group();
+  private speedStreaks: THREE.Line[] = [];
 
   // Road, Obstacles & Weather
   private road: RoadManager;
@@ -65,6 +69,7 @@ export class RacingEngine {
   private oilSlickTimer: number = 0;
   private oilSwerveVelocity: number = 0;
   private oilSpinAngle: number = 0;
+  private oilSlipDirection: number = 0; // -1: slip to left, +1: slip to right (counter-steering blocked during slip)
 
   // Opponent Cars (Multiplayer)
   private opponents: Map<string, { car: Car3D; targetX: number; targetZ: number; currentX: number; currentZ: number; speed: number }> = new Map();
@@ -190,6 +195,9 @@ export class RacingEngine {
 
     // Distant Cyber Skyline & Stars
     this.createSkyline();
+
+    // Speed Ramp Visual System (Booster Warp Streaks)
+    this.setupSpeedRampVisuals();
 
     // Event Listeners
     this.setupInputs();
@@ -347,6 +355,7 @@ export class RacingEngine {
     this.oilSlickTimer = 0;
     this.oilSwerveVelocity = 0;
     this.oilSpinAngle = 0;
+    this.oilSlipDirection = 0;
     this.playerCar.group.position.set(0, 0, 0);
     this.playerCar.group.rotation.set(0, 0, 0);
     this.obstacles.reset();
@@ -412,6 +421,8 @@ export class RacingEngine {
       // Physical swerve 1 to 2 lanes across highway
       this.playerX -= this.oilSwerveVelocity * delta;
       this.cameraShakeIntensity = Math.max(this.cameraShakeIntensity, 0.45);
+    } else {
+      this.oilSlipDirection = 0;
     }
 
     // Nitro consumption & Speed Ramp Surge Dynamics
@@ -455,6 +466,24 @@ export class RacingEngine {
     if (this.virtualSteer !== 0) screenSteer = this.virtualSteer;
 
     // USER REQUIREMENT:
+    // Saat slip karena oli TIDAK BISA counter-steering selama effect berlangsung!
+    // Misal slip ke kiri (oilSlipDirection === -1), TIDAK BISA belok ke kanan (screenSteer > 0) sampai normal kembali.
+    // Misal slip ke kanan (oilSlipDirection === 1), TIDAK BISA belok ke kiri (screenSteer < 0) sampai normal kembali.
+    if (this.oilSlickTimer > 0) {
+      if (this.oilSlipDirection === -1) {
+        // Slipping left: Block any attempt to counter-steer right
+        if (screenSteer > 0) {
+          screenSteer = 0;
+        }
+      } else if (this.oilSlipDirection === 1) {
+        // Slipping right: Block any attempt to counter-steer left
+        if (screenSteer < 0) {
+          screenSteer = 0;
+        }
+      }
+    }
+
+    // USER REQUIREMENT:
     // Turning/lane shifting is determined by forward speed. When stationary (diam, speed = 0),
     // controls only turn the front wheels without moving the car laterally!
     const speedRatio = Math.min(1.0, this.currentSpeed / 25);
@@ -483,7 +512,7 @@ export class RacingEngine {
     this.steeringAngle = THREE.MathUtils.lerp(
       this.steeringAngle,
       targetAngle,
-      delta * (this.oilSlickTimer > 0 ? 6 : 12)
+      delta * (this.oilSlickTimer > 0 ? 8 : 12)
     );
 
     // Forward advancement
@@ -498,13 +527,32 @@ export class RacingEngine {
     // Update Player Car Mesh
     this.playerCar.group.position.set(this.playerX, 0, this.playerZ);
     this.playerCar.group.rotation.y = this.steeringAngle;
-    this.playerCar.group.rotation.z = screenSteer * 0.08 * speedRatio; // Realistic centrifugal chassis lean
-    // Front wheels visibly turn in place (-screenSteer * 0.5) even when stationary!
-    this.playerCar.updateWheels(this.currentSpeed * delta * 2, -screenSteer * 0.5);
+
+    let chassisLean = screenSteer * 0.08 * speedRatio;
+    if (this.oilSlickTimer > 0) {
+      chassisLean = this.oilSlipDirection * 0.12; // Realistic skid tilt during loss of traction
+    }
+    this.playerCar.group.rotation.z = chassisLean;
+
+    // Front wheels visibly turn in place; during oil slip, wheels are trapped in skid direction and cannot counter-steer
+    let wheelSteer = -screenSteer * 0.5;
+    if (this.oilSlickTimer > 0) {
+      if (this.oilSlipDirection === -1) {
+        // Slipping left: wheels locked towards left, cannot turn right
+        wheelSteer = Math.max(0.42, wheelSteer);
+      } else if (this.oilSlipDirection === 1) {
+        // Slipping right: wheels locked towards right, cannot turn left
+        wheelSteer = Math.min(-0.42, wheelSteer);
+      }
+    }
+    this.playerCar.updateWheels(this.currentSpeed * delta * 2, wheelSteer);
     this.playerCar.update(delta); // Updates damage flash if hit
 
     // Update Road chunks & Obstacles
     this.road.update(this.playerZ);
+    // USER REQUIREMENT: Saat speed ramp remove border line
+    this.road.setSpeedRamp(isBoosterEngaged || this.speedRampFactor > 0.05, this.speedRampFactor);
+    this.updateSpeedRamp(delta);
     this.obstacles.update(this.playerZ, delta);
     this.particles.update(delta);
 
@@ -571,6 +619,8 @@ export class RacingEngine {
         nitro: Math.round(this.nitro),
         isNitroActive: this.isNitroPressed && this.nitro > 0,
         speedRampFactor: this.speedRampFactor,
+        isOilSlipping: this.oilSlickTimer > 0,
+        oilSlipDirection: this.oilSlipDirection,
         headlightMode: this.playerCar.headlightMode,
         weather: this.weather.currentWeather,
         weatherInfo: this.weather.getWeatherInfo(),
@@ -590,7 +640,7 @@ export class RacingEngine {
       this.currentSpeed = Math.min(this.nitroMaxSpeed + 15, this.currentSpeed + 25);
       this.score += evt.scoreBonus || 250;
     } else if (evt.type === 'oil_slick') {
-      this.oilSlickTimer = 1.4;
+      this.oilSlickTimer = 1.6;
       this.currentSpeed *= 0.88;
       soundManager.playTireSkid();
 
@@ -603,13 +653,15 @@ export class RacingEngine {
       else if (isSteeringRight) swerveDir = 1;
       else swerveDir = this.playerX > 0 ? 1 : -1; // If moving straight, swerve towards the road center/other lane
 
-      const speedFactor = Math.min(1.0, Math.max(0.3, this.currentSpeed / 55));
-      const numLanes = 1.0 + speedFactor * 1.0; // 1.0 to 2.0 lanes!
-      const totalSwerveDistance = numLanes * 4.4; // 4.4m to 8.8m
+      this.oilSlipDirection = swerveDir; // Record slip direction: -1 = left, +1 = right
 
-      this.oilSwerveVelocity = swerveDir * (totalSwerveDistance / 1.3);
-      this.oilSpinAngle = -swerveDir * 0.42; // Aggressive drift/skid yaw
-      this.cameraShakeIntensity = 0.7;
+      const speedFactor = Math.min(1.0, Math.max(0.3, this.currentSpeed / 55));
+      const numLanes = 1.2 + speedFactor * 1.0; // 1.2 to 2.2 lanes!
+      const totalSwerveDistance = numLanes * 4.4;
+
+      this.oilSwerveVelocity = swerveDir * (totalSwerveDistance / 1.5);
+      this.oilSpinAngle = -swerveDir * 0.45; // Aggressive drift/skid yaw
+      this.cameraShakeIntensity = 0.75;
       this.particles.spawnOilSplash(this.playerX, this.playerZ);
       this.particles.spawnSkidSmoke(this.playerX, this.playerZ);
     } else if (evt.type === 'damage') {
@@ -732,6 +784,65 @@ export class RacingEngine {
 
     this.camera.position.lerp(this.targetCameraPos, delta * 10);
     this.camera.lookAt(this.targetCameraLook);
+  }
+
+  /**
+   * USER REQUIREMENT:
+   * Berikan effect speed ramp saat booster active
+   * Stream luminous warp speed lines streaking rapidly past the vehicle
+   */
+  private setupSpeedRampVisuals() {
+    this.speedRampStreaksGroup = new THREE.Group();
+    const numStreaks = 50;
+    const streakMat = new THREE.LineBasicMaterial({
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending
+    });
+
+    for (let i = 0; i < numStreaks; i++) {
+      const length = 6.0 + Math.random() * 8.0;
+      const geo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0, 0, -length)
+      ]);
+      const line = new THREE.Line(geo, streakMat);
+      line.visible = false;
+      this.speedStreaks.push(line);
+      this.speedRampStreaksGroup.add(line);
+    }
+    this.scene.add(this.speedRampStreaksGroup);
+  }
+
+  private updateSpeedRamp(delta: number) {
+    const isRamping = this.speedRampFactor > 0.05;
+    this.speedRampStreaksGroup.visible = isRamping;
+
+    if (!isRamping) {
+      this.speedStreaks.forEach((streak) => {
+        streak.visible = false;
+      });
+      return;
+    }
+
+    const streakVelocity = (this.currentSpeed * 2.8 + 80) * (0.8 + this.speedRampFactor * 0.8);
+
+    this.speedStreaks.forEach((streak, idx) => {
+      streak.visible = true;
+      streak.position.z -= streakVelocity * delta;
+
+      // Wrap around if behind player's camera
+      if (streak.position.z < this.playerZ - 12) {
+        const angle = (idx / this.speedStreaks.length) * Math.PI * 2 + Math.random() * 0.4;
+        const radius = 2.4 + Math.random() * 6.2;
+        streak.position.set(
+          this.playerX + Math.cos(angle) * radius,
+          0.8 + Math.abs(Math.sin(angle)) * 4.5,
+          this.playerZ + 35 + Math.random() * 45
+        );
+      }
+    });
   }
 
   public getPlayerState() {

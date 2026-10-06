@@ -342,6 +342,64 @@ class GameDatabase {
     };
   }
 
+  public addCoins(uid: string, amount: number): UserProfile {
+    const user = this.data.users[uid];
+    if (!user) throw new Error('User not found');
+    user.coins = Math.max(0, (user.coins || 0) + amount);
+    this.save();
+    const { passwordHash: _, ...publicProfile } = user;
+    return publicProfile;
+  }
+
+  public findUserByIdentifier(identifier: string): { exists: boolean; username?: string; emailMasked?: string } {
+    const term = identifier.trim().toLowerCase();
+    const user = Object.values(this.data.users).find(
+      u => u.username.toLowerCase() === term || (u.email && u.email.toLowerCase() === term)
+    );
+    if (!user) {
+      return { exists: false };
+    }
+    let emailMasked: string | undefined = undefined;
+    if (user.email) {
+      const parts = user.email.split('@');
+      if (parts.length === 2) {
+        const namePart = parts[0];
+        const maskedName = namePart.length <= 2 ? namePart[0] + '***' : namePart.slice(0, 2) + '***' + namePart.slice(-1);
+        emailMasked = `${maskedName}@${parts[1]}`;
+      }
+    }
+    return {
+      exists: true,
+      username: user.username,
+      emailMasked
+    };
+  }
+
+  public async resetPassword(identifier: string, newPassword: string): Promise<{ user: UserProfile; token: string }> {
+    const term = identifier.trim().toLowerCase();
+    const user = Object.values(this.data.users).find(
+      u => u.username.toLowerCase() === term || (u.email && u.email.toLowerCase() === term)
+    );
+
+    if (!user) {
+      throw new Error('Account not found for this username or email');
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      throw new Error('New password must be at least 6 characters');
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.passwordHash = await bcrypt.hash(newPassword, salt);
+
+    const token = 'tok_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    this.data.sessions[token] = user.uid;
+    this.save();
+
+    const { passwordHash: _, ...publicProfile } = user;
+    return { user: publicProfile, token };
+  }
+
   public getLeaderboard(): LeaderboardEntry[] {
     return [...this.data.leaderboard].sort((a, b) => b.score - a.score);
   }

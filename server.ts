@@ -42,6 +42,60 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// Forgot Password: Step 1 - Check account existence and provide mask/hint
+app.post('/api/auth/forgot-password/verify', (req, res) => {
+  try {
+    const { identifier } = req.body;
+    if (!identifier || !identifier.trim()) {
+      return res.status(400).json({ error: 'Please enter your username or registered email' });
+    }
+    const info = db.findUserByIdentifier(identifier.trim());
+    if (!info.exists) {
+      return res.status(404).json({ error: 'No racer account found matching that username or email' });
+    }
+    res.json({ success: true, username: info.username, emailMasked: info.emailMasked });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Verification check failed' });
+  }
+});
+
+// Forgot Password: Step 2 - Set new password
+app.post('/api/auth/forgot-password/reset', async (req, res) => {
+  try {
+    const { identifier, newPassword } = req.body;
+    if (!identifier || !newPassword) {
+      return res.status(400).json({ error: 'Username/Email and new password required' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters' });
+    }
+    const result = await db.resetPassword(identifier.trim(), newPassword);
+    res.json({ success: true, ...result, message: 'Password has been successfully updated!' });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Password reset failed' });
+  }
+});
+
+// Secret Cheat Code: Add 10,000 Coins (when user clicks '+' button 10 times)
+app.post('/api/profile/cheat-coins', (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'Unauthorized: Please sign in or join as guest' });
+  const user = db.getUserByToken(token);
+  if (!user) return res.status(401).json({ error: 'Invalid or expired session' });
+
+  try {
+    const updated = db.addCoins(user.uid, 10000);
+    res.json({
+      success: true,
+      user: updated,
+      addedAmount: 10000,
+      message: '🎉 SECRET CHEAT ACTIVATED! +10,000 COINS ADDED TO YOUR GARAGE!'
+    });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || 'Failed to apply coin cheat' });
+  }
+});
+
 app.post('/api/auth/guest', (req, res) => {
   try {
     const { username } = req.body;

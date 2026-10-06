@@ -79,6 +79,18 @@ export const GameHUD: React.FC<GameHUDProps> = ({
         <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_80px_rgba(244,63,94,0.4)] z-40 animate-pulse" />
       )}
 
+      {/* Oil Slick Traction Loss & Counter-Steer Locked Warning Alert */}
+      {stats.isOilSlipping && (
+        <div className="absolute top-28 left-1/2 -translate-x-1/2 pointer-events-none z-40 flex flex-col items-center animate-bounce">
+          <div className="px-4 py-1.5 rounded-2xl bg-amber-950/95 border border-amber-500/60 shadow-[0_0_25px_rgba(245,158,11,0.6)] flex items-center gap-2 text-amber-300">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+            <span className="font-mono text-xs font-black uppercase tracking-wider">
+              OIL SLIP • COUNTER-STEER LOCKED ({stats.oilSlipDirection === -1 ? 'SLIP LEFT' : 'SLIP RIGHT'})
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Top Bar: Progress, Rank, Score */}
       <div className="flex items-start justify-between gap-4">
         {/* Left: Rank & Status */}

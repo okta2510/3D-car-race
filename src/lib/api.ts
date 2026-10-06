@@ -140,4 +140,43 @@ export const api = {
     if (!res.ok) throw new Error(data.error || 'Failed to submit race result');
     return data;
   },
+
+  async verifyAccountForReset(identifier: string): Promise<{ success: boolean; username: string; emailMasked?: string }> {
+    const res = await fetch('/api/auth/forgot-password/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Account not found');
+    return data;
+  },
+
+  async resetPassword(identifier: string, newPassword: string): Promise<{ user: UserProfile; token: string; message: string }> {
+    const res = await fetch('/api/auth/forgot-password/reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier, newPassword }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to reset password');
+    if (data.token) {
+      this.setToken(data.token);
+    }
+    return data;
+  },
+
+  async claimCheatCoins(): Promise<{ user: UserProfile; addedAmount: number; message: string }> {
+    const token = this.getToken();
+    const res = await fetch('/api/profile/cheat-coins', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token || ''}`,
+      },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to claim coins');
+    return data;
+  },
 };

@@ -247,6 +247,7 @@ export default function App() {
         onOpenGarage={() => setIsGarageOpen(true)}
         onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
         onOpenMultiplayer={() => setIsMultiplayerOpen(true)}
+        onProfileUpdated={(updated) => setUser(updated)}
         onLogout={() => {
           api.clearToken();
           setUser(null);

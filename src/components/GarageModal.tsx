@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { UserProfile } from '../types/game.js';
 import { api } from '../lib/api.js';
 import { Car3D } from '../game/CarModel.js';
+import { soundManager } from '../game/SoundManager.js';
 import {
   X,
   Wrench,
@@ -90,6 +91,35 @@ export const GarageModal: React.FC<GarageModalProps> = ({
   const [upgrading, setUpgrading] = useState<string | null>(null);
   const [buyingCar, setBuyingCar] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Secret Cheat Code State (Click '+' 10 times to unlock 10,000 coins)
+  const [cheatClicks, setCheatClicks] = useState(0);
+  const [cheatToast, setCheatToast] = useState<string | null>(null);
+  const cheatTimerRef = useRef<any>(null);
+
+  const handlePlusCheatClick = async () => {
+    if (cheatTimerRef.current) clearTimeout(cheatTimerRef.current);
+    const nextCount = cheatClicks + 1;
+    setCheatClicks(nextCount);
+
+    cheatTimerRef.current = setTimeout(() => {
+      setCheatClicks(0);
+    }, 3000);
+
+    if (nextCount >= 10) {
+      setCheatClicks(0);
+      try {
+        const res = await api.claimCheatCoins();
+        onProfileUpdated(res.user);
+        soundManager.playVictory();
+        setCheatToast('🎉 CHEAT ACTIVATED! +10,000 COINS!');
+        setTimeout(() => setCheatToast(null), 3500);
+      } catch (err: any) {
+        setCheatToast(err.message || 'Cheat failed');
+        setTimeout(() => setCheatToast(null), 3000);
+      }
+    }
+  };
 
   // 3D Preview Canvas references
   const previewContainerRef = useRef<HTMLDivElement | null>(null);
@@ -323,9 +353,22 @@ export const GarageModal: React.FC<GarageModalProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 font-bold text-sm">
+          <div className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 font-bold text-sm">
             <Coins className="w-4 h-4 text-amber-400" />
             <span>{user.coins.toLocaleString()} Coins</span>
+            <button
+              type="button"
+              onClick={handlePlusCheatClick}
+              title="Add Coins (+)"
+              className="w-5 h-5 rounded-md bg-amber-400/25 hover:bg-amber-400/50 active:scale-90 text-amber-200 hover:text-white flex items-center justify-center font-black text-xs leading-none transition-transform cursor-pointer ml-1"
+            >
+              +
+            </button>
+            {cheatToast && (
+              <div className="absolute -bottom-8 right-0 whitespace-nowrap px-3 py-1 rounded-lg bg-amber-400 text-slate-950 font-black text-xs shadow-[0_0_20px_rgba(245,158,11,0.9)] z-50 animate-bounce">
+                {cheatToast}
+              </div>
+            )}
           </div>
         </div>
 
