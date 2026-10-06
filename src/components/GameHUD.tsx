@@ -58,6 +58,17 @@ export const GameHUD: React.FC<GameHUDProps> = ({
 
   return (
     <div className="absolute inset-0 pointer-events-none z-30 flex flex-col justify-between pt-20 sm:pt-24 pb-4 sm:pb-6 px-3 sm:px-6 select-none font-sans overflow-hidden">
+      {/* Booster Speed Ramp Warp Optical Glow (Clean, no border lines) */}
+      {((stats.speedRampFactor && stats.speedRampFactor > 0.04) || stats.isNitroActive) && (
+        <div
+          className="absolute inset-0 pointer-events-none z-20 transition-opacity duration-200 overflow-hidden"
+          style={{ opacity: Math.min(1.0, Math.max(0.2, (stats.speedRampFactor || 0.7) * 0.9)) }}
+        >
+          {/* Soft Atmospheric Optical Vignette (No hard border lines) */}
+          <div className="absolute inset-0 shadow-[inset_0_0_100px_rgba(6,182,212,0.3)]" />
+        </div>
+      )}
+
       {/* Damage Screen Flash Overlay */}
       {damageFlash && (
         <div className="absolute inset-0 pointer-events-none bg-rose-600/25 border-4 border-rose-500 z-50 animate-pulse" />
@@ -248,8 +259,24 @@ export const GameHUD: React.FC<GameHUDProps> = ({
 
           {/* Center: Digital Speedometer */}
           <div className="flex flex-col items-center">
-            <div className="p-3 sm:p-4 rounded-2xl bg-slate-950/90 backdrop-blur-md border border-cyan-500/40 shadow-[0_0_25px_rgba(6,182,212,0.3)] text-center min-w-[130px] sm:min-w-[160px]">
-              <div className="text-4xl sm:text-5xl font-black italic tracking-tighter text-white font-mono leading-none">
+            {((stats.speedRampFactor && stats.speedRampFactor > 0.08) || stats.isNitroActive) && (
+              <div className="mb-1 px-2.5 py-0.5 rounded-full bg-cyan-950/90 text-[10px] font-black uppercase tracking-wider text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.8)] animate-pulse flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+                <span>SPEED RAMP OVERDRIVE</span>
+              </div>
+            )}
+            <div
+              className={`p-3 sm:p-4 rounded-2xl bg-slate-950/90 backdrop-blur-md transition-all duration-150 text-center min-w-[130px] sm:min-w-[160px] ${
+                (stats.speedRampFactor && stats.speedRampFactor > 0.1) || stats.isNitroActive
+                  ? 'border border-transparent shadow-[0_0_35px_rgba(6,182,212,0.65)] scale-105'
+                  : 'border border-cyan-500/40 shadow-[0_0_25px_rgba(6,182,212,0.3)]'
+              }`}
+            >
+              <div className={`text-4xl sm:text-5xl font-black italic tracking-tighter font-mono leading-none ${
+                (stats.speedRampFactor && stats.speedRampFactor > 0.1) || stats.isNitroActive
+                  ? 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-white to-sky-300 drop-shadow-[0_0_12px_rgba(6,182,212,0.8)]'
+                  : 'text-white'
+              }`}>
                 {stats.speedKmh}
               </div>
               <div className="flex items-center justify-center gap-1 mt-1 text-[11px] font-black uppercase tracking-widest text-cyan-400">

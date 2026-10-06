@@ -381,15 +381,16 @@ export class Car3D {
     }
   }
 
-  public setNitro(active: boolean) {
+  public setNitro(active: boolean, rampFactor: number = 1.0) {
     const targetOpacity = active ? 0.95 : 0;
     this.nitroMaterial.opacity = targetOpacity;
     this.nitroFlames.forEach((flame) => {
       if (active) {
+        const lengthMultiplier = 1.2 + rampFactor * 1.8;
         flame.scale.set(
-          1 + Math.random() * 0.3,
-          1 + Math.random() * 0.4,
-          1.2 + Math.random() * 0.6
+          1 + Math.random() * 0.3 * rampFactor,
+          1 + Math.random() * 0.4 * rampFactor,
+          lengthMultiplier + Math.random() * 0.5
         );
       }
     });

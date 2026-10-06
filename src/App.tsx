@@ -53,6 +53,7 @@ export default function App() {
     },
     rank: 1,
     totalRacers: 1,
+    speedRampFactor: 0,
     isFinished: false,
     isCrashed: false,
   });

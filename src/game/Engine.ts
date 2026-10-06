@@ -14,6 +14,7 @@ export interface GameStats {
   health: number;
   nitro: number; // 0 - 100
   isNitroActive: boolean;
+  speedRampFactor?: number; // 0.0 to 1.0 dynamic booster speed ramp
   headlightMode: 'high' | 'dim';
   weather: WeatherType;
   weatherInfo: WeatherInfo;
@@ -32,6 +33,7 @@ export class RacingEngine {
   private renderer: THREE.WebGLRenderer;
   private animFrameId: number | null = null;
   private isRunning: boolean = false;
+  private speedRampFactor: number = 0; // 0.0 to 1.0 progressive surge curve
 
   // Road, Obstacles & Weather
   private road: RoadManager;
@@ -412,22 +414,31 @@ export class RacingEngine {
       this.cameraShakeIntensity = Math.max(this.cameraShakeIntensity, 0.45);
     }
 
-    // Nitro consumption (USER REQUEST: nitro does NOT refill automatically)
-    let effectiveMaxSpeed = this.maxSpeed;
-    if (this.isNitroPressed && this.nitro > 0) {
-      effectiveMaxSpeed = this.nitroMaxSpeed;
+    // Nitro consumption & Speed Ramp Surge Dynamics
+    const isBoosterEngaged = this.isNitroPressed && this.nitro > 0;
+    if (isBoosterEngaged) {
+      // Rapid progressive speed ramp-up curve
+      this.speedRampFactor = Math.min(1.0, this.speedRampFactor + delta * 3.8);
       this.nitro = Math.max(0, this.nitro - delta * 30);
-      this.playerCar.setNitro(true);
+      this.playerCar.setNitro(true, this.speedRampFactor);
       soundManager.startNitroSound();
     } else {
+      // Smooth deceleration ramp-down decay
+      this.speedRampFactor = Math.max(0, this.speedRampFactor - delta * 2.2);
       soundManager.stopNitroSound();
-      this.playerCar.setNitro(false);
+      this.playerCar.setNitro(false, 0);
       // NOTE: Automatic regeneration removed as requested. Nitro is only gained from pickups!
     }
 
-    // Speed calculation
+    let effectiveMaxSpeed = this.maxSpeed;
+    if (this.speedRampFactor > 0) {
+      effectiveMaxSpeed = THREE.MathUtils.lerp(this.maxSpeed, this.nitroMaxSpeed, this.speedRampFactor);
+    }
+
+    // Speed calculation with Speed Ramp acceleration surge
     if (isAccelerating) {
-      const accelRate = this.isNitroPressed ? this.acceleration * 1.8 : this.acceleration;
+      const rampSurge = isBoosterEngaged ? 1.5 + Math.pow(this.speedRampFactor, 0.7) * 1.5 : 1.0;
+      const accelRate = this.acceleration * rampSurge;
       this.currentSpeed = Math.min(effectiveMaxSpeed, this.currentSpeed + accelRate * delta);
     } else if (isBraking) {
       this.currentSpeed = Math.max(0, this.currentSpeed - this.braking * delta);
@@ -558,7 +569,8 @@ export class RacingEngine {
         score: this.score,
         health: Math.max(0, Math.round(this.health)),
         nitro: Math.round(this.nitro),
-        isNitroActive: this.isNitroPressed,
+        isNitroActive: this.isNitroPressed && this.nitro > 0,
+        speedRampFactor: this.speedRampFactor,
         headlightMode: this.playerCar.headlightMode,
         weather: this.weather.currentWeather,
         weatherInfo: this.weather.getWeatherInfo(),
@@ -658,47 +670,57 @@ export class RacingEngine {
   }
 
   private updateCamera(delta: number) {
-    // Dynamic Camera FOV (Widening during Nitro boost)
-    const targetFOV = this.isNitroPressed ? 78 : 65;
-    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, targetFOV, delta * 6);
+    // Dynamic Speed Ramp FOV: Progressively ramps from 65° up to 92° during boost
+    const targetFOV = 65 + this.speedRampFactor * 27;
+    this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, targetFOV, delta * 9);
     this.camera.updateProjectionMatrix();
 
     if (this.cameraMode === 'chase') {
-      // 3rd Person behind car
+      // Speed Ramp Dynamic Pullback and Ground-Hugging Drop
+      const pullBackZ = (this.playerZ - 8.5) - this.speedRampFactor * 2.5;
+      const dropHeight = 4.2 - this.speedRampFactor * 0.55;
+      const lookAheadZ = this.playerZ + 18 + this.speedRampFactor * 12;
+
       this.targetCameraPos.set(
         this.playerX * 0.7,
-        4.2,
-        this.playerZ - 8.5
+        dropHeight,
+        pullBackZ
       );
       this.targetCameraLook.set(
         this.playerX * 0.9,
-        1.2,
-        this.playerZ + 18
+        1.2 - this.speedRampFactor * 0.2,
+        lookAheadZ
       );
     } else if (this.cameraMode === 'hood') {
       // Bumper / Hood cam
       this.targetCameraPos.set(
         this.playerX,
-        1.4,
+        1.4 - this.speedRampFactor * 0.2,
         this.playerZ + 1.2
       );
       this.targetCameraLook.set(
         this.playerX,
         1.2,
-        this.playerZ + 30
+        this.playerZ + 30 + this.speedRampFactor * 15
       );
     } else {
       // Overhead top-down cam
       this.targetCameraPos.set(
         this.playerX * 0.4,
-        18,
-        this.playerZ - 12
+        18 + this.speedRampFactor * 3,
+        this.playerZ - 12 - this.speedRampFactor * 3
       );
       this.targetCameraLook.set(
         this.playerX,
         0,
         this.playerZ + 15
       );
+    }
+
+    // High-speed Speed Ramp Micro-Rumble
+    if (this.speedRampFactor > 0.08) {
+      this.targetCameraPos.x += (Math.random() - 0.5) * 0.08 * this.speedRampFactor;
+      this.targetCameraPos.y += (Math.random() - 0.5) * 0.08 * this.speedRampFactor;
     }
 
     // Apply Camera Shake on collision or high speed
