@@ -43,6 +43,14 @@ export default function App() {
     nitro: 100,
     isNitroActive: false,
     headlightMode: 'high',
+    weather: 'clear' as const,
+    weatherInfo: {
+      type: 'clear' as const,
+      displayName: 'CLEAR HIGHWAY',
+      gripFactor: 100,
+      visibilityMeters: 250,
+      statusText: 'OPTIMAL TRACK CONDITIONS',
+    },
     rank: 1,
     totalRacers: 1,
     isFinished: false,
@@ -94,13 +102,13 @@ export default function App() {
     return () => unsub();
   }, []);
 
-  // Start single-player race
+  // Start single-player race (Unlimited Endless Sprint)
   const startSinglePlayer = () => {
     setGameMode('single');
     setCurrentRoom(null);
     setActiveScreen('racing');
     setIsGameOverOpen(false);
-    initEngine(12345 + Math.floor(Math.random() * 10000), 8000, 'single');
+    initEngine(12345 + Math.floor(Math.random() * 10000), Infinity, 'single');
   };
 
   // Start multiplayer race from lobby
@@ -251,10 +259,11 @@ export default function App() {
       {activeScreen === 'racing' && (
         <GameHUD
           stats={gameStats}
-          trackLength={currentRoom?.trackLength || 8000}
+          trackLength={currentRoom?.trackLength || (gameMode === 'single' ? Infinity : 4000)}
           mode={gameMode}
           onToggleCamera={() => engineRef.current?.toggleCamera()}
           onToggleHeadlights={() => engineRef.current?.toggleHeadlights()}
+          onCycleWeather={() => engineRef.current?.cycleWeather()}
           onVirtualControl={(ctrl) => engineRef.current?.setVirtualControls(ctrl)}
         />
       )}

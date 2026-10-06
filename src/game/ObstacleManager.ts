@@ -63,8 +63,9 @@ export class ObstacleManager {
   }
 
   public update(playerZ: number, delta: number): CollisionEvent | null {
-    // Generate ahead up to playerZ + maxSpawnDistance
-    while (this.nextCheckZ < Math.min(this.maxZTrack - 50, playerZ + this.maxSpawnDistance)) {
+    // Generate ahead up to playerZ + maxSpawnDistance (Infinity for endless sprint)
+    const targetZLimit = isFinite(this.maxZTrack) ? Math.min(this.maxZTrack - 50, playerZ + this.maxSpawnDistance) : playerZ + this.maxSpawnDistance;
+    while (this.nextCheckZ < targetZLimit) {
       this.generateObstacleAtZ(this.nextCheckZ);
       // Interval between obstacles: 35m to 65m
       const spacing = 35 + this.random() * 30;
@@ -242,16 +243,24 @@ export class ObstacleManager {
         color: 0xfbbf24,
         metalness: 0.9,
         roughness: 0.2,
-        emissive: 0xd97706,
-        emissiveIntensity: 0.5
+        emissive: 0xf59e0b,
+        emissiveIntensity: 0.85
       });
       const coin = new THREE.Mesh(coinGeo, coinMat);
       coin.position.y = 1.0;
       group.add(coin);
 
-      const light = new THREE.PointLight(0xfbbf24, 2, 4);
-      light.position.y = 1.0;
-      group.add(light);
+      // Glowing outer halo ring
+      const haloGeo = new THREE.RingGeometry(0.8, 0.95, 16);
+      const haloMat = new THREE.MeshBasicMaterial({
+        color: 0xfbbf24,
+        transparent: true,
+        opacity: 0.7,
+        side: THREE.DoubleSide
+      });
+      const halo = new THREE.Mesh(haloGeo, haloMat);
+      halo.position.y = 1.0;
+      group.add(halo);
       return group;
     }
 
@@ -260,61 +269,53 @@ export class ObstacleManager {
       const nitroMat = new THREE.MeshStandardMaterial({
         color: 0x06b6d4,
         metalness: 0.8,
-        emissive: 0x06b6d4,
-        emissiveIntensity: 0.8
+        emissive: 0x00f0ff,
+        emissiveIntensity: 0.95
       });
       const cylinder = new THREE.Mesh(cylinderGeo, nitroMat);
       cylinder.position.y = 0.9;
       cylinder.rotation.z = Math.PI / 4;
       group.add(cylinder);
 
-      const glow = new THREE.PointLight(0x06b6d4, 3, 5);
-      glow.position.y = 0.9;
-      group.add(glow);
+      // Glowing pulse ring
+      const auraGeo = new THREE.RingGeometry(0.5, 0.7, 16);
+      const auraMat = new THREE.MeshBasicMaterial({
+        color: 0x38bdf8,
+        transparent: true,
+        opacity: 0.8,
+        side: THREE.DoubleSide
+      });
+      const aura = new THREE.Mesh(auraGeo, auraMat);
+      aura.position.y = 0.9;
+      group.add(aura);
       return group;
     }
 
     if (data.type === 'oil_slick') {
-      // Main Glossy Iridescent Oil Puddle
-      const slickGeo = new THREE.CircleGeometry(2.3, 24);
+      // Genangan Oli Murni Warna Hitam Pekat (Jet Black Wet Oil Puddle)
+      const slickGeo = new THREE.CircleGeometry(2.5, 32);
       slickGeo.rotateX(-Math.PI / 2);
       const slickMat = new THREE.MeshStandardMaterial({
-        color: 0x3b0764, // Deep iridescent oil base
-        emissive: 0x7e22ce, // Purple sheen glow
-        emissiveIntensity: 0.7,
-        roughness: 0.05,
-        metalness: 0.95,
+        color: 0x050505, // Hitam pekat murni
+        roughness: 0.08,
+        metalness: 0.92,
       });
       const slick = new THREE.Mesh(slickGeo, slickMat);
       slick.position.y = 0.05;
       group.add(slick);
 
-      // Shimmering Inner Rainbow Ring
-      const innerRingGeo = new THREE.RingGeometry(1.4, 1.65, 20);
-      innerRingGeo.rotateX(-Math.PI / 2);
-      const innerRingMat = new THREE.MeshBasicMaterial({
-        color: 0x06b6d4, // Cyan iridescent ring
+      // Cincin basah tipis di tepian aspal
+      const rimGeo = new THREE.RingGeometry(2.4, 2.58, 32);
+      rimGeo.rotateX(-Math.PI / 2);
+      const rimMat = new THREE.MeshBasicMaterial({
+        color: 0x1e293b,
+        transparent: true,
+        opacity: 0.65,
         side: THREE.DoubleSide,
       });
-      const innerRing = new THREE.Mesh(innerRingGeo, innerRingMat);
-      innerRing.position.y = 0.06;
-      group.add(innerRing);
-
-      // Warning Hazard Amber Outer Perimeter Ring
-      const ringGeo = new THREE.RingGeometry(2.2, 2.45, 24);
-      ringGeo.rotateX(-Math.PI / 2);
-      const ringMat = new THREE.MeshBasicMaterial({
-        color: 0xf59e0b, // High visibility amber caution border
-        side: THREE.DoubleSide,
-      });
-      const ring = new THREE.Mesh(ringGeo, ringMat);
-      ring.position.y = 0.065;
-      group.add(ring);
-
-      // Amber Ground Warning Light (Illuminates asphalt so it stands out from a distance)
-      const slickLight = new THREE.PointLight(0xf59e0b, 2.4, 5.5, 1.2);
-      slickLight.position.y = 0.4;
-      group.add(slickLight);
+      const rim = new THREE.Mesh(rimGeo, rimMat);
+      rim.position.y = 0.055;
+      group.add(rim);
 
       return group;
     }

@@ -281,7 +281,7 @@ export class ParticleManager {
 
     // 4. Spawn Smoke Clouds at impact site
     for (let i = 0; i < 4; i++) {
-      const smokeMesh = new THREE.Mesh(this.smokeGeo, this.smokeMat.clone());
+      const smokeMesh = new THREE.Mesh(this.smokeGeo, this.smokeMat);
       smokeMesh.position.copy(impactPoint);
       smokeMesh.position.x += (Math.random() - 0.5) * 0.8;
       smokeMesh.position.y += Math.random() * 0.6 + 0.2;
@@ -305,21 +305,127 @@ export class ParticleManager {
   }
 
   /**
+   * Spawns black oil liquid droplets and dark ground splash ripples when hitting oil
+   */
+  public spawnOilSplash(x: number, z: number) {
+    // 1. Black oil droplets spraying upwards and radially from the wheels
+    const numDroplets = 45;
+    for (let i = 0; i < numDroplets; i++) {
+      if (this.sparks.length >= this.maxSparks) {
+        this.sparks.shift();
+      }
+
+      const angle = Math.random() * Math.PI * 2;
+      const elevation = (Math.random() * 0.45 + 0.15) * Math.PI;
+      const speed = 10 + Math.random() * 18;
+
+      const vel = new THREE.Vector3(
+        Math.cos(angle) * Math.cos(elevation) * speed,
+        Math.sin(elevation) * speed + 4,
+        Math.sin(angle) * Math.cos(elevation) * speed - 6
+      );
+
+      this.sparks.push({
+        position: new THREE.Vector3(
+          x + (Math.random() - 0.5) * 2.0,
+          0.15,
+          z + (Math.random() - 0.5) * 2.0
+        ),
+        velocity: vel,
+        life: 0.55 + Math.random() * 0.35,
+        maxLife: 0.9,
+        size: 0.65 + Math.random() * 0.5,
+        color: new THREE.Color(0x0a0a0f), // Deep jet black oil droplet
+      });
+    }
+
+    // 2. Expanding dark liquid oil splatter ripple on asphalt
+    const oilRippleMat = new THREE.MeshBasicMaterial({
+      color: 0x050508,
+      transparent: true,
+      opacity: 0.9,
+      side: THREE.DoubleSide,
+    });
+    const oilRipple = new THREE.Mesh(this.shockwaveGeo, oilRippleMat);
+    oilRipple.position.set(x, 0.07, z);
+    this.group.add(oilRipple);
+
+    this.shockwaves.push({
+      mesh: oilRipple,
+      life: 0.55,
+      maxLife: 0.55,
+      startScale: 0.6,
+      endScale: 4.2,
+    });
+  }
+
+  /**
+   * Spawns tire smoke and cornering friction particles when the car is turning / steering
+   */
+  public spawnTireSteerEffect(x: number, z: number, steerDir: number, speed: number) {
+    if (this.smokeList.length > 20) return;
+    if (Math.random() > 0.45) return; // Throttle emission rate to maintain butter-smooth 60fps
+
+    // Both left and right outer tires generate smoke when turning
+    const wheelOffsets = [
+      { xOffset: -0.95, zOffset: 1.1 },  // Front Left
+      { xOffset: 0.95, zOffset: 1.1 },   // Front Right
+      { xOffset: -0.95, zOffset: -1.1 }, // Rear Left
+      { xOffset: 0.95, zOffset: -1.1 },  // Rear Right
+    ];
+
+    // Pick outer wheel on turn side where friction is greatest
+    const activeWheel = steerDir > 0
+      ? [wheelOffsets[0], wheelOffsets[2]] // Turning Right (weight on Left wheels)
+      : [wheelOffsets[1], wheelOffsets[3]]; // Turning Left (weight on Right wheels)
+
+    activeWheel.forEach((w) => {
+      const smokeMesh = new THREE.Mesh(this.smokeGeo, this.smokeMat);
+      smokeMesh.position.set(x + w.xOffset, 0.15, z + w.zOffset);
+      this.group.add(smokeMesh);
+
+      // Smoke drifts laterally away from turning vector
+      const lateralVel = -steerDir * (2.5 + Math.random() * 3);
+      this.smokeList.push({
+        mesh: smokeMesh,
+        velocity: new THREE.Vector3(lateralVel, 1.2 + Math.random() * 1.5, -speed * 0.3 - 2),
+        life: 0.35 + Math.random() * 0.15,
+        maxLife: 0.45,
+        baseScale: 0.35 + (speed / 70) * 0.3,
+      });
+
+      // Sparks when cornering aggressively at top speed
+      if (speed > 45 && Math.random() < 0.2) {
+        if (this.sparks.length < this.maxSparks) {
+          this.sparks.push({
+            position: new THREE.Vector3(x + w.xOffset, 0.08, z + w.zOffset),
+            velocity: new THREE.Vector3(-steerDir * 6 + (Math.random() - 0.5) * 3, 3 + Math.random() * 3, -speed * 0.35),
+            life: 0.22,
+            maxLife: 0.22,
+            size: 0.3,
+            color: new THREE.Color(0xfacc15),
+          });
+        }
+      }
+    });
+  }
+
+  /**
    * Spawns tire skid smoke and light friction sparks (e.g. during heavy drift or oil slick)
    */
   public spawnSkidSmoke(x: number, z: number) {
-    if (this.smokeList.length > 25) return;
+    if (this.smokeList.length > 20) return;
 
     [-0.8, 0.8].forEach((wheelOffset) => {
-      const smokeMesh = new THREE.Mesh(this.smokeGeo, this.smokeMat.clone());
+      const smokeMesh = new THREE.Mesh(this.smokeGeo, this.smokeMat);
       smokeMesh.position.set(x + wheelOffset, 0.15, z - 1.2);
       this.group.add(smokeMesh);
 
       this.smokeList.push({
         mesh: smokeMesh,
         velocity: new THREE.Vector3((Math.random() - 0.5) * 1.5, 1.2, -1.0),
-        life: 0.45,
-        maxLife: 0.45,
+        life: 0.4,
+        maxLife: 0.4,
         baseScale: 0.5,
       });
     });
@@ -405,7 +511,6 @@ export class ParticleManager {
 
       if (debris.life <= 0) {
         this.group.remove(debris.mesh);
-        debris.mesh.geometry.dispose();
         this.debrisList.splice(i, 1);
         continue;
       }

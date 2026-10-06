@@ -51,7 +51,7 @@ const CAR_MODELS = [
     name: 'Cyber GT',
     desc: 'Balanced sports coupe with carbon splitter and twin spoiler. (Default starter vehicle)',
     price: 0,
-    topSpeedBadge: '180 km/h',
+    topSpeedBadge: '130 km/h',
     accelBadge: 'High',
   },
   {

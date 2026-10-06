@@ -11,6 +11,8 @@ export interface CarOptions {
 export class Car3D {
   public group: THREE.Group;
   public wheels: THREE.Mesh[] = [];
+  public steerHubs: THREE.Group[] = [];
+  public rollGroups: THREE.Group[] = [];
   public nitroFlames: THREE.Mesh[] = [];
   public underglowLight: THREE.PointLight | null = null;
   public headLights: THREE.SpotLight[] = [];
@@ -199,17 +201,17 @@ export class Car3D {
     this.group.add(hlLeft, hlRight);
     this.headlightMeshes.push(hlLeft, hlRight);
 
-    // Left SpotLight Projection Beam - bright illumination ahead
-    const spotLeft = new THREE.SpotLight(0xffffff, 10, 55, Math.PI / 5, 0.4, 1);
+    // Left SpotLight Projection Beam - ultra-bright high-power xenon flash beam
+    const spotLeft = new THREE.SpotLight(0xffffff, 26, 95, Math.PI / 4, 0.35, 1);
     spotLeft.position.set(-0.75, 0.7, isFormula ? 3.0 : 2.2);
-    spotLeft.target.position.set(-0.75, 0, 25);
+    spotLeft.target.position.set(-0.75, 0, 35);
     this.group.add(spotLeft, spotLeft.target);
     this.headLights.push(spotLeft);
 
-    // Right SpotLight Projection Beam
-    const spotRight = new THREE.SpotLight(0xffffff, 10, 55, Math.PI / 5, 0.4, 1);
+    // Right SpotLight Projection Beam - ultra-bright high-power xenon flash beam
+    const spotRight = new THREE.SpotLight(0xffffff, 26, 95, Math.PI / 4, 0.35, 1);
     spotRight.position.set(0.75, 0.7, isFormula ? 3.0 : 2.2);
-    spotRight.target.position.set(0.75, 0, 25);
+    spotRight.target.position.set(0.75, 0, 35);
     this.group.add(spotRight, spotRight.target);
     this.headLights.push(spotRight);
 
@@ -219,40 +221,70 @@ export class Car3D {
     tailBar.position.set(0, 0.65, -2.2);
     this.group.add(tailBar);
 
-    // --- WHEELS ---
+    // --- WHEELS (True 3D Dual-Axis Steering Knuckles & Rolling Hubs) ---
     const wheelRadius = isFormula ? 0.42 : 0.38;
     const wheelWidth = isFormula ? 0.36 : 0.28;
-    const wheelGeo = new THREE.CylinderGeometry(wheelRadius, wheelRadius, wheelWidth, 16);
+    const wheelGeo = new THREE.CylinderGeometry(wheelRadius, wheelRadius, wheelWidth, 24);
     wheelGeo.rotateZ(Math.PI / 2);
 
-    const tireMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.9 });
-    const rimMat = new THREE.MeshStandardMaterial({ color: 0xd1d5db, metalness: 0.9, roughness: 0.2 });
+    const tireMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.92, metalness: 0.1 });
+    const rimMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.95, roughness: 0.15 });
+    const caliperMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.5, roughness: 0.3 });
+    const brakeDiscMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.9, roughness: 0.25 });
 
     const wheelTrackX = isFormula ? 1.25 : 1.08;
     const wheelPositions = [
-      [-wheelTrackX, 0.38, 1.4],
-      [wheelTrackX, 0.38, 1.4],
-      [-wheelTrackX, 0.38, -1.4],
-      [wheelTrackX, 0.38, -1.4],
+      [-wheelTrackX, 0.38, 1.4],  // 0: Front Left
+      [wheelTrackX, 0.38, 1.4],   // 1: Front Right
+      [-wheelTrackX, 0.38, -1.4], // 2: Rear Left
+      [wheelTrackX, 0.38, -1.4],  // 3: Rear Right
     ];
 
     wheelPositions.forEach(([x, y, z]) => {
-      const wheelHub = new THREE.Group();
-      wheelHub.position.set(x, y, z);
+      // 1. Steering Pivot Hub (Yaw around Y axis when turning left/right)
+      const steerHub = new THREE.Group();
+      steerHub.position.set(x, y, z);
 
+      // Brake caliper on steering knuckle (stays stationary relative to spin, turns with steering)
+      const caliper = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.16, 0.2), caliperMat);
+      const isRightSide = x > 0;
+      caliper.position.set(isRightSide ? -wheelWidth * 0.35 : wheelWidth * 0.35, wheelRadius * 0.45, 0);
+      steerHub.add(caliper);
+
+      // 2. Rolling Hub (Pitch around X axis forward/backward)
+      const rollGroup = new THREE.Group();
+
+      // Tire mesh
       const tire = new THREE.Mesh(wheelGeo, tireMat);
       tire.castShadow = true;
-      wheelHub.add(tire);
+      rollGroup.add(tire);
 
-      const rim = new THREE.Mesh(
-        new THREE.CylinderGeometry(wheelRadius * 0.65, wheelRadius * 0.65, wheelWidth + 0.02, 8),
-        rimMat
-      );
-      rim.rotateZ(Math.PI / 2);
-      wheelHub.add(rim);
+      // Alloy Rim
+      const rimGeo = new THREE.CylinderGeometry(wheelRadius * 0.68, wheelRadius * 0.68, wheelWidth + 0.02, 16);
+      rimGeo.rotateZ(Math.PI / 2);
+      const rim = new THREE.Mesh(rimGeo, rimMat);
+      rollGroup.add(rim);
+
+      // Wheel Spokes
+      const spokeGeo = new THREE.BoxGeometry(wheelWidth + 0.03, wheelRadius * 1.18, 0.06);
+      const spoke1 = new THREE.Mesh(spokeGeo, rimMat);
+      const spoke2 = new THREE.Mesh(spokeGeo, rimMat);
+      spoke2.rotation.x = Math.PI / 2;
+      rollGroup.add(spoke1, spoke2);
+
+      // Brake Disc
+      const discGeo = new THREE.CylinderGeometry(wheelRadius * 0.52, wheelRadius * 0.52, 0.04, 16);
+      discGeo.rotateZ(Math.PI / 2);
+      const disc = new THREE.Mesh(discGeo, brakeDiscMat);
+      disc.position.x = isRightSide ? -wheelWidth * 0.25 : wheelWidth * 0.25;
+      rollGroup.add(disc);
+
+      steerHub.add(rollGroup);
+      this.group.add(steerHub);
 
       this.wheels.push(tire);
-      this.group.add(wheelHub);
+      this.steerHubs.push(steerHub);
+      this.rollGroups.push(rollGroup);
     });
 
     // --- DUAL OR QUAD EXHAUST WITH NITRO FLAMES ---
@@ -297,9 +329,10 @@ export class Car3D {
     const isHigh = mode === 'high';
 
     this.headLights.forEach((spot) => {
-      spot.intensity = isHigh ? 10 : 3.5;
-      spot.distance = isHigh ? 55 : 28;
-      spot.angle = isHigh ? Math.PI / 5 : Math.PI / 7;
+      spot.intensity = isHigh ? 26 : 9.0;
+      spot.distance = isHigh ? 95 : 45;
+      spot.angle = isHigh ? Math.PI / 4 : Math.PI / 6;
+      spot.penumbra = isHigh ? 0.35 : 0.5;
     });
 
     if (this.headlightMat) {
@@ -393,11 +426,16 @@ export class Car3D {
   }
 
   public updateWheels(deltaRotation: number, steerAngle: number) {
-    this.wheels.forEach((w, idx) => {
-      w.rotation.x += deltaRotation;
-      if (idx < 2) {
-        w.rotation.y = steerAngle;
-      }
+    // 1. Roll all 4 wheel assemblies smoothly forward around X axis
+    this.rollGroups.forEach((roll) => {
+      roll.rotation.x += deltaRotation;
     });
+
+    // 2. Swivel front 2 wheel steering knuckles smoothly around Y axis on turn left or right
+    for (let i = 0; i < 2; i++) {
+      if (this.steerHubs[i]) {
+        this.steerHubs[i].rotation.y = steerAngle;
+      }
+    }
   }
 }

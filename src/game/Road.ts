@@ -6,6 +6,7 @@ export class RoadManager {
   public chunkLength: number = 200;
   private numChunks: number = 6;
   private chunks: THREE.Group[] = [];
+  private roadMaterials: THREE.MeshStandardMaterial[] = [];
   public currentZOffset: number = 0;
 
   constructor() {
@@ -25,13 +26,14 @@ export class RoadManager {
     const chunk = new THREE.Group();
     chunk.position.z = zPos;
 
-    // Asphalt Main Deck - brightened for great obstacle contrast
+    // Asphalt Main Deck - adapts to weather wetness
     const roadGeo = new THREE.PlaneGeometry(this.roadWidth, this.chunkLength);
     const roadMat = new THREE.MeshStandardMaterial({
       color: 0x222c42,
       roughness: 0.8,
       metalness: 0.15
     });
+    this.roadMaterials.push(roadMat);
     const road = new THREE.Mesh(roadGeo, roadMat);
     road.rotation.x = -Math.PI / 2;
     road.receiveShadow = true;
@@ -111,11 +113,20 @@ export class RoadManager {
       lampRight.position.set(this.roadWidth / 2 + 0.8, 5.8, zLight);
       chunk.add(lampRight);
 
-      // Street lamp downward illumination pool onto the highway
+      // Street lamp downward illumination glow on the highway
       if (l % 2 === 0) {
-        const streetLight = new THREE.PointLight(0x7dd3fc, 1.8, 24, 1.2);
-        streetLight.position.set(0, 5.5, zLight);
-        chunk.add(streetLight);
+        const glowGeo = new THREE.PlaneGeometry(12, 12);
+        const glowMat = new THREE.MeshBasicMaterial({
+          color: 0x38bdf8,
+          transparent: true,
+          opacity: 0.12,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        });
+        const glow = new THREE.Mesh(glowGeo, glowMat);
+        glow.rotation.x = -Math.PI / 2;
+        glow.position.set(0, 0.03, zLight);
+        chunk.add(glow);
       }
     }
 
@@ -129,6 +140,15 @@ export class RoadManager {
       if (chunk.position.z < playerZ - this.chunkLength * 1.5) {
         chunk.position.z += this.numChunks * this.chunkLength;
       }
+    });
+  }
+
+  public setWetness(wetness: number) {
+    const roughness = THREE.MathUtils.lerp(0.8, 0.2, wetness);
+    const metalness = THREE.MathUtils.lerp(0.15, 0.75, wetness);
+    this.roadMaterials.forEach(m => {
+      m.roughness = roughness;
+      m.metalness = metalness;
     });
   }
 }

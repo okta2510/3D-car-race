@@ -10,7 +10,10 @@ import {
   ArrowUp,
   Award,
   Sun,
-  Milestone
+  Milestone,
+  CloudRain,
+  CloudFog,
+  Moon
 } from 'lucide-react';
 
 interface GameHUDProps {
@@ -19,6 +22,7 @@ interface GameHUDProps {
   mode: 'single' | 'multiplayer';
   onToggleCamera: () => void;
   onToggleHeadlights?: () => void;
+  onCycleWeather?: () => void;
   onVirtualControl: (controls: {
     steer?: number;
     throttle?: number;
@@ -33,6 +37,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   mode,
   onToggleCamera,
   onToggleHeadlights,
+  onCycleWeather,
   onVirtualControl,
 }) => {
   // Track completion percentage
@@ -52,7 +57,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   }, [stats.health]);
 
   return (
-    <div className="absolute inset-0 pointer-events-none z-30 flex flex-col justify-between p-4 sm:p-6 select-none font-sans overflow-hidden">
+    <div className="absolute inset-0 pointer-events-none z-30 flex flex-col justify-between pt-20 sm:pt-24 pb-4 sm:pb-6 px-3 sm:px-6 select-none font-sans overflow-hidden">
       {/* Damage Screen Flash Overlay */}
       {damageFlash && (
         <div className="absolute inset-0 pointer-events-none bg-rose-600/25 border-4 border-rose-500 z-50 animate-pulse" />
@@ -101,26 +106,52 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               onClick={onToggleHeadlights}
               className={`pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl backdrop-blur-md border text-xs font-semibold transition-all ${
                 stats.headlightMode === 'high'
-                  ? 'bg-amber-950/70 border-amber-500/50 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.3)]'
+                  ? 'bg-amber-950/70 border-amber-500/50 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.4)]'
                   : 'bg-slate-950/80 border-slate-800 text-slate-400 hover:text-slate-200'
               }`}
-              title="Toggle Headlights High/Dim (F key)"
+              title="Toggle Flash / High Beam (F key)"
             >
               <Sun className={`w-3.5 h-3.5 ${stats.headlightMode === 'high' ? 'text-amber-400 animate-pulse' : 'text-slate-500'}`} />
               <span className="hidden sm:inline">
-                {stats.headlightMode === 'high' ? 'High Beam (F)' : 'Dim Beam (F)'}
+                {stats.headlightMode === 'high' ? 'Flash Beam (F)' : 'Dim Beam (F)'}
               </span>
               <span className="sm:hidden font-mono text-[10px]">
-                {stats.headlightMode === 'high' ? 'HIGH' : 'DIM'}
+                {stats.headlightMode === 'high' ? 'FLASH' : 'DIM'}
+              </span>
+            </button>
+
+            {/* Weather Condition Badge & Toggle */}
+            <button
+              onClick={onCycleWeather}
+              className={`pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl backdrop-blur-md border text-xs font-semibold transition-all ${
+                stats.weather === 'rain'
+                  ? 'bg-blue-950/80 border-blue-500/50 text-blue-300 shadow-[0_0_12px_rgba(59,130,246,0.3)]'
+                  : stats.weather === 'fog'
+                  ? 'bg-slate-900/90 border-cyan-500/50 text-cyan-200 shadow-[0_0_12px_rgba(6,182,212,0.3)]'
+                  : 'bg-slate-950/80 border-slate-800 text-slate-300 hover:text-white'
+              }`}
+              title="Weather Condition (Auto changes by distance or click to cycle)"
+            >
+              {stats.weather === 'rain' ? (
+                <CloudRain className="w-3.5 h-3.5 text-blue-400 animate-bounce" />
+              ) : stats.weather === 'fog' ? (
+                <CloudFog className="w-3.5 h-3.5 text-cyan-300 animate-pulse" />
+              ) : (
+                <Moon className="w-3.5 h-3.5 text-indigo-300" />
+              )}
+              <span className="hidden md:inline font-mono text-[11px] uppercase">
+                {stats.weatherInfo?.displayName || stats.weather}
+              </span>
+              <span className="md:hidden font-mono text-[10px] uppercase">
+                {stats.weather}
               </span>
             </button>
           </div>
         </div>
 
-        {/* Center / Realtime Dashboard Section */}
-        {mode === 'multiplayer' ? (
-          /* Multiplayer: Top Track Distance Progress Bar (Only for PvP races) */
-          <div className="flex-1 max-w-md mx-auto hidden sm:block">
+        {/* Center: Highway Track Distance Progress (Only shown in multiplayer PvP races) */}
+        {mode === 'multiplayer' && (
+          <div className="flex-1 max-w-sm mx-auto hidden lg:block">
             <div className="p-2.5 rounded-2xl bg-slate-950/85 backdrop-blur-md border border-slate-800 shadow-md">
               <div className="flex justify-between text-[11px] font-bold text-slate-400 mb-1 px-1">
                 <span>START</span>
@@ -137,71 +168,46 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               </div>
             </div>
           </div>
-        ) : (
-          /* Solo Endless Sprint: Bar distance dihilangkan, diganti Tempat Realtime Distance & Score yang jelas & lega */
-          <div className="hidden md:flex items-center gap-3 mx-auto">
-            {/* Realtime Distance Card */}
-            <div className="flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-slate-950/90 backdrop-blur-md border border-cyan-500/40 shadow-[0_0_20px_rgba(6,182,212,0.25)]">
-              <div className="w-8 h-8 rounded-xl bg-cyan-950/80 border border-cyan-500/50 flex items-center justify-center text-cyan-400">
-                <Milestone className="w-4 h-4" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[10px] uppercase font-bold tracking-wider text-cyan-400">
-                  REALTIME DISTANCE
-                </span>
-                <div className="flex items-baseline gap-1">
-                  <span className="font-mono text-lg font-black text-white leading-none">
-                    {stats.distanceMeters.toLocaleString()}
-                  </span>
-                  <span className="text-[11px] font-bold text-cyan-300">m</span>
-                  <span className="text-[10px] text-slate-400 font-mono ml-1">
-                    ({(stats.distanceMeters / 1000).toFixed(2)} km)
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Realtime Score Card */}
-            <div className="flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-slate-950/90 backdrop-blur-md border border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.25)]">
-              <div className="w-8 h-8 rounded-xl bg-amber-950/80 border border-amber-500/50 flex items-center justify-center text-amber-400">
-                <Flame className="w-4 h-4 text-rose-500 fill-rose-500/20" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400">
-                  REALTIME SCORE
-                </span>
-                <div className="flex items-baseline gap-1">
-                  <span className="font-mono text-lg font-black text-amber-300 leading-none">
-                    {stats.score.toLocaleString()}
-                  </span>
-                  <span className="text-[10px] font-bold text-amber-500">PTS</span>
-                </div>
-              </div>
-            </div>
-          </div>
         )}
 
-        {/* Right: Quick Realtime Badges (Visible on mobile/tablet, or in multiplayer) */}
-        <div className={`flex items-center gap-2 ${mode === 'single' ? 'md:hidden' : ''}`}>
-          {/* Realtime Distance */}
-          <div className="px-3 py-1.5 rounded-xl bg-slate-950/90 backdrop-blur-md border border-cyan-500/40 text-cyan-300 font-black text-xs sm:text-sm flex items-center gap-1.5 shadow-[0_0_15px_rgba(6,182,212,0.25)]">
-            <Milestone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400" />
+        {/* Right: Highly Visible, Unobstructed Realtime Distance & Realtime Score Dashboard */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Realtime Distance Card - Always clearly visible */}
+          <div className="flex items-center gap-2 sm:gap-2.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-2xl bg-slate-950/95 backdrop-blur-md border border-cyan-500/50 shadow-[0_0_20px_rgba(6,182,212,0.3)]">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-cyan-950/80 border border-cyan-500/50 flex items-center justify-center text-cyan-400 shrink-0">
+              <Milestone className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </div>
             <div className="flex flex-col text-left">
-              <span className="text-[8px] font-extrabold uppercase text-cyan-400 leading-tight">DISTANCE</span>
-              <span className="font-mono text-xs sm:text-sm text-white leading-tight">
-                {stats.distanceMeters.toLocaleString()}m
+              <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-cyan-400 leading-tight">
+                DISTANCE
               </span>
+              <div className="flex items-baseline gap-1">
+                <span className="font-mono text-sm sm:text-lg font-black text-white leading-tight">
+                  {stats.distanceMeters.toLocaleString()}
+                </span>
+                <span className="text-[10px] sm:text-[11px] font-bold text-cyan-300">m</span>
+                <span className="text-[10px] text-slate-400 font-mono hidden sm:inline ml-0.5">
+                  ({(stats.distanceMeters / 1000).toFixed(2)}km)
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Realtime Live Score */}
-          <div className="px-3 py-1.5 rounded-xl bg-slate-950/90 backdrop-blur-md border border-amber-500/40 text-amber-400 font-black text-xs sm:text-sm flex items-center gap-1.5 shadow-[0_0_15px_rgba(245,158,11,0.25)]">
-            <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-500 fill-rose-500/20" />
+          {/* Realtime Score Card - Always clearly visible */}
+          <div className="flex items-center gap-2 sm:gap-2.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-2xl bg-slate-950/95 backdrop-blur-md border border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.3)]">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-amber-950/80 border border-amber-500/50 flex items-center justify-center text-amber-400 shrink-0">
+              <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-500 fill-rose-500/20" />
+            </div>
             <div className="flex flex-col text-left">
-              <span className="text-[8px] font-extrabold uppercase text-amber-400 leading-tight">SCORE</span>
-              <span className="font-mono text-xs sm:text-sm text-amber-300 leading-tight">
-                {stats.score.toLocaleString()}
+              <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-amber-400 leading-tight">
+                SCORE
               </span>
+              <div className="flex items-baseline gap-1">
+                <span className="font-mono text-sm sm:text-lg font-black text-amber-300 leading-tight">
+                  {stats.score.toLocaleString()}
+                </span>
+                <span className="text-[10px] font-bold text-amber-500">PTS</span>
+              </div>
             </div>
           </div>
         </div>

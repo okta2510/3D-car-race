@@ -3,6 +3,7 @@ import { Car3D } from './CarModel.js';
 import { RoadManager } from './Road.js';
 import { ObstacleManager, CollisionEvent } from './ObstacleManager.js';
 import { ParticleManager } from './ParticleManager.js';
+import { WeatherManager, WeatherType, WeatherInfo } from './WeatherManager.js';
 import { soundManager } from './SoundManager.js';
 import { MultiplayerPlayer } from '../types/game.js';
 
@@ -14,6 +15,8 @@ export interface GameStats {
   nitro: number; // 0 - 100
   isNitroActive: boolean;
   headlightMode: 'high' | 'dim';
+  weather: WeatherType;
+  weatherInfo: WeatherInfo;
   rank: number;
   totalRacers: number;
   isFinished: boolean;
@@ -30,19 +33,22 @@ export class RacingEngine {
   private animFrameId: number | null = null;
   private isRunning: boolean = false;
 
-  // Road & Obstacles
+  // Road, Obstacles & Weather
   private road: RoadManager;
   private obstacles: ObstacleManager;
   public particles: ParticleManager;
+  public weather: WeatherManager;
+  private ambientLight!: THREE.AmbientLight;
+  private dirLight!: THREE.DirectionalLight;
 
   // Player Car & Physics
   public playerCar: Car3D;
   private playerX: number = 0;
   private playerZ: number = 0;
-  private currentSpeed: number = 0; // units/sec (1 unit ~= 2 meters)
-  private maxSpeed: number = 70; // ~180 km/h
-  private nitroMaxSpeed: number = 115; // ~300 km/h
-  private acceleration: number = 32;
+  private currentSpeed: number = 0; // units/sec (speed in km/h = currentSpeed * 2.8)
+  private maxSpeed: number = 46.43; // Basic car (Cyber GT) default speed: 130 km/h (46.43 * 2.8 = 130)
+  private nitroMaxSpeed: number = 67.85; // ~190 km/h on nitro
+  private acceleration: number = 28;
   private braking: number = 55;
   private lateralSpeed: number = 18;
   private steeringAngle: number = 0;
@@ -51,7 +57,7 @@ export class RacingEngine {
   private isNitroPressed: boolean = false;
   private score: number = 0;
   private distanceTraveled: number = 0;
-  private trackLength: number = 5000;
+  private trackLength: number = Infinity; // Endless sprint has no distance limit
   private isFinished: boolean = false;
   private isGameOver: boolean = false;
   private oilSlickTimer: number = 0;
@@ -91,15 +97,46 @@ export class RacingEngine {
     mode?: 'single' | 'multiplayer';
   } = {}) {
     this.container = container;
-    this.trackLength = options.trackLength || (options.mode === 'multiplayer' ? 4000 : 8000);
+    // Endless mode runs indefinitely without distance limits; Multiplayer has target finish track
+    const isEndless = options.mode === 'single' || options.trackLength === Infinity;
+    this.trackLength = isEndless ? Infinity : (options.trackLength || 4000);
 
-    // Apply upgrades
-    if (options.upgrades) {
-      this.maxSpeed = 65 + options.upgrades.topSpeed * 6;
-      this.nitroMaxSpeed = 105 + options.upgrades.topSpeed * 8;
-      this.acceleration = 28 + options.upgrades.acceleration * 5;
-      this.lateralSpeed = 16 + options.upgrades.handling * 3;
+    // Speed Limits by Car Model (USER REQUIREMENT: basic car speed limit changed to 130 km/h)
+    const carModel = options.carModel || 'Cyber GT';
+    let baseSpeedKmh = 130; // Basic Car (Cyber GT): 130 km/h
+    let baseNitroKmh = 190;
+    let baseAccel = 28;
+    let baseHandling = 16;
+
+    if (carModel === 'Apex Phantom') {
+      baseSpeedKmh = 210;
+      baseNitroKmh = 270;
+      baseAccel = 34;
+      baseHandling = 19;
+    } else if (carModel === 'Hyperion Supercar') {
+      baseSpeedKmh = 250;
+      baseNitroKmh = 310;
+      baseAccel = 40;
+      baseHandling = 21;
+    } else if (carModel === 'Velocity Formula') {
+      baseSpeedKmh = 290;
+      baseNitroKmh = 350;
+      baseAccel = 46;
+      baseHandling = 24;
     }
+
+    // Apply performance upgrades
+    const topUpgrade = options.upgrades?.topSpeed || 0;
+    const accelUpgrade = options.upgrades?.acceleration || 0;
+    const handUpgrade = options.upgrades?.handling || 0;
+
+    const finalTopKmh = baseSpeedKmh + topUpgrade * 6;
+    const finalNitroKmh = baseNitroKmh + topUpgrade * 8;
+
+    this.maxSpeed = finalTopKmh / 2.8;
+    this.nitroMaxSpeed = finalNitroKmh / 2.8;
+    this.acceleration = baseAccel + accelUpgrade * 5;
+    this.lateralSpeed = baseHandling + handUpgrade * 3;
 
     // Three.js Scene Setup - Brightened ambiance for clear road & obstacle visibility
     this.scene = new THREE.Scene();
@@ -111,12 +148,12 @@ export class RacingEngine {
     const height = container.clientHeight || window.innerHeight;
     this.camera = new THREE.PerspectiveCamera(65, width / height, 0.1, 1000);
 
-    // Renderer
+    // Renderer - PCFShadowMap for smooth, glitch-free 60fps rendering
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.6;
     container.appendChild(this.renderer.domElement);
@@ -135,6 +172,10 @@ export class RacingEngine {
     // Particle Effects System (Sparks, Debris, Smoke, Shockwaves)
     this.particles = new ParticleManager();
     this.scene.add(this.particles.group);
+
+    // Dynamic Weather System (Rain, Fog, Lightning, Wet Road)
+    this.weather = new WeatherManager();
+    this.scene.add(this.weather.group);
 
     // Player Car
     this.playerCar = new Car3D({
@@ -156,6 +197,7 @@ export class RacingEngine {
   private setupLighting() {
     // Ambient light - significantly brightened for clear road & obstacle visibility
     const ambient = new THREE.AmbientLight(0xdbeafe, 2.4);
+    this.ambientLight = ambient;
     this.scene.add(ambient);
 
     // Sky/Ground hemisphere fill for rich contrast and depth
@@ -168,6 +210,7 @@ export class RacingEngine {
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 1024;
     dirLight.shadow.mapSize.height = 1024;
+    this.dirLight = dirLight;
     this.scene.add(dirLight);
 
     // Cyan/Violet city horizon rim light
@@ -454,6 +497,24 @@ export class RacingEngine {
     this.obstacles.update(this.playerZ, delta);
     this.particles.update(delta);
 
+    // Dynamic Weather Update (Rain, Fog, Wet Road, Lightning)
+    this.weather.update(
+      this.playerX,
+      this.playerZ,
+      this.currentSpeed,
+      this.distanceTraveled,
+      delta,
+      this.scene,
+      this.road,
+      this.ambientLight,
+      this.dirLight
+    );
+
+    // Effect Ban Roda Saat Berbelok (Tire smoke & cornering friction when steering)
+    if (Math.abs(screenSteer) > 0.12 && this.currentSpeed > 14) {
+      this.particles.spawnTireSteerEffect(this.playerX, this.playerZ, screenSteer, this.currentSpeed);
+    }
+
     // Dynamic Tire Skid Smoke while slipping on oil
     if (this.oilSlickTimer > 0 && Math.random() < 0.45) {
       this.particles.spawnSkidSmoke(this.playerX, this.playerZ);
@@ -477,8 +538,8 @@ export class RacingEngine {
     // Sound engine throttle update
     soundManager.updateEnginePitch(this.currentSpeed / this.maxSpeed, this.isNitroPressed);
 
-    // Check Finish Line
-    if (!this.isFinished && this.playerZ >= this.trackLength) {
+    // Check Finish Line (Only in finite tracks / multiplayer races; endless runs never end by distance)
+    if (!this.isFinished && isFinite(this.trackLength) && this.playerZ >= this.trackLength) {
       this.isFinished = true;
       soundManager.stopNitroSound();
       soundManager.playVictory();
@@ -499,6 +560,8 @@ export class RacingEngine {
         nitro: Math.round(this.nitro),
         isNitroActive: this.isNitroPressed,
         headlightMode: this.playerCar.headlightMode,
+        weather: this.weather.currentWeather,
+        weatherInfo: this.weather.getWeatherInfo(),
         rank: this.computeRank(),
         totalRacers: this.opponents.size + 1,
         isFinished: this.isFinished,
@@ -535,6 +598,7 @@ export class RacingEngine {
       this.oilSwerveVelocity = swerveDir * (totalSwerveDistance / 1.3);
       this.oilSpinAngle = -swerveDir * 0.42; // Aggressive drift/skid yaw
       this.cameraShakeIntensity = 0.7;
+      this.particles.spawnOilSplash(this.playerX, this.playerZ);
       this.particles.spawnSkidSmoke(this.playerX, this.playerZ);
     } else if (evt.type === 'damage') {
       const dmg = evt.damage || 25;
@@ -567,6 +631,8 @@ export class RacingEngine {
             nitro: Math.round(this.nitro),
             isNitroActive: false,
             headlightMode: this.playerCar.headlightMode,
+            weather: this.weather.currentWeather,
+            weatherInfo: this.weather.getWeatherInfo(),
             rank: this.computeRank(),
             totalRacers: this.opponents.size + 1,
             isFinished: false,
@@ -575,6 +641,10 @@ export class RacingEngine {
         }
       }
     }
+  }
+
+  public cycleWeather(): WeatherType {
+    return this.weather.cycleNextWeather();
   }
 
   private computeRank(): number {
