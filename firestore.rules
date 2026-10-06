@@ -1,0 +1,61 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global deny-by-default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // User profile: readable by all authenticated users (for race name display), writeable only by user
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() 
+        && isValidId(userId)
+        && request.auth.uid == userId
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() <= 50;
+      allow delete: if false;
+    }
+
+    // Global leaderboard: read by anyone signed in, entries created by authenticated user for themselves
+    match /leaderboard/{entryId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && isValidId(entryId)
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.score is number
+        && request.resource.data.distance is number;
+      allow update, delete: if false;
+    }
+
+    // Multiplayer rooms
+    match /rooms/{roomId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && isValidId(roomId)
+        && request.resource.data.hostId == request.auth.uid;
+      allow update: if isSignedIn()
+        && isValidId(roomId);
+      allow delete: if isSignedIn() && resource.data.hostId == request.auth.uid;
+
+      // Realtime player sync inside rooms
+      match /players/{playerId} {
+        allow read: if isSignedIn();
+        allow create, update: if isSignedIn()
+          && (playerId == request.auth.uid || request.resource.data.userId == request.auth.uid)
+          && request.resource.data.posX is number
+          && request.resource.data.posZ is number;
+        allow delete: if isSignedIn() && playerId == request.auth.uid;
+      }
+    }
+  }
+}

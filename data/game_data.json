@@ -1,0 +1,341 @@
+{
+  "users": {
+    "gst_xgjpum9": {
+      "uid": "gst_xgjpum9",
+      "username": "TestPilot",
+      "carColor": "#eab308",
+      "carModel": "Cyber GT",
+      "underglowColor": "#06b6d4",
+      "highScore": 0,
+      "totalDistance": 0,
+      "racesWon": 0,
+      "totalRaces": 0,
+      "coins": 150,
+      "upgrades": {
+        "topSpeed": 1,
+        "acceleration": 1,
+        "handling": 1,
+        "nitroCapacity": 1
+      }
+    },
+    "gst_lni1zud": {
+      "uid": "gst_lni1zud",
+      "username": "Racer_5315",
+      "carColor": "#a855f7",
+      "carModel": "Cyber GT",
+      "underglowColor": "#06b6d4",
+      "highScore": 8124,
+      "totalDistance": 11514,
+      "racesWon": 0,
+      "totalRaces": 2,
+      "coins": 210,
+      "upgrades": {
+        "topSpeed": 1,
+        "acceleration": 1,
+        "handling": 1,
+        "nitroCapacity": 1
+      }
+    },
+    "gst_r62jcgg": {
+      "uid": "gst_r62jcgg",
+      "username": "Racer_8003",
+      "carColor": "#3b82f6",
+      "carModel": "Cyber GT",
+      "underglowColor": "#06b6d4",
+      "highScore": 0,
+      "totalDistance": 0,
+      "racesWon": 0,
+      "totalRaces": 0,
+      "coins": 150,
+      "upgrades": {
+        "topSpeed": 1,
+        "acceleration": 1,
+        "handling": 1,
+        "nitroCapacity": 1
+      }
+    },
+    "gst_0n7jxf5": {
+      "uid": "gst_0n7jxf5",
+      "username": "Racer_9245",
+      "carColor": "#a855f7",
+      "carModel": "Cyber GT",
+      "underglowColor": "#06b6d4",
+      "highScore": 0,
+      "totalDistance": 0,
+      "racesWon": 0,
+      "totalRaces": 0,
+      "coins": 150,
+      "upgrades": {
+        "topSpeed": 1,
+        "acceleration": 1,
+        "handling": 1,
+        "nitroCapacity": 1
+      }
+    },
+    "gst_43jlb5f": {
+      "uid": "gst_43jlb5f",
+      "username": "Racer_3556",
+      "carColor": "#ef4444",
+      "carModel": "Cyber GT",
+      "underglowColor": "#06b6d4",
+      "highScore": 0,
+      "totalDistance": 0,
+      "racesWon": 0,
+      "totalRaces": 0,
+      "coins": 150,
+      "upgrades": {
+        "topSpeed": 1,
+        "acceleration": 1,
+        "handling": 1,
+        "nitroCapacity": 1
+      }
+    },
+    "gst_r46uzku": {
+      "uid": "gst_r46uzku",
+      "username": "Racer_6119",
+      "carColor": "#eab308",
+      "carModel": "Cyber GT",
+      "underglowColor": "#06b6d4",
+      "highScore": 0,
+      "totalDistance": 0,
+      "racesWon": 0,
+      "totalRaces": 0,
+      "coins": 150,
+      "upgrades": {
+        "topSpeed": 1,
+        "acceleration": 1,
+        "handling": 1,
+        "nitroCapacity": 1
+      }
+    },
+    "gst_vda5ke0": {
+      "uid": "gst_vda5ke0",
+      "username": "Racer_1399",
+      "carColor": "#a855f7",
+      "carModel": "Cyber GT",
+      "underglowColor": "#06b6d4",
+      "highScore": 0,
+      "totalDistance": 0,
+      "racesWon": 0,
+      "totalRaces": 0,
+      "coins": 150,
+      "upgrades": {
+        "topSpeed": 1,
+        "acceleration": 1,
+        "handling": 1,
+        "nitroCapacity": 1
+      }
+    },
+    "gst_mcsnk48": {
+      "uid": "gst_mcsnk48",
+      "username": "Racer_1835",
+      "carColor": "#a855f7",
+      "carModel": "Apex Phantom",
+      "underglowColor": "#f59e0b",
+      "highScore": 6290,
+      "totalDistance": 9296,
+      "racesWon": 0,
+      "totalRaces": 2,
+      "coins": 60,
+      "upgrades": {
+        "topSpeed": 1,
+        "acceleration": 2,
+        "handling": 1,
+        "nitroCapacity": 1
+      }
+    },
+    "usr_wlzb6a8muw9nnnu": {
+      "uid": "usr_wlzb6a8muw9nnnu",
+      "username": "okta",
+      "email": "me@oktaviardi.com",
+      "carColor": "#ef4444",
+      "carModel": "Cyber GT",
+      "underglowColor": "#06b6d4",
+      "highScore": 0,
+      "totalDistance": 0,
+      "racesWon": 0,
+      "totalRaces": 0,
+      "coins": 200,
+      "upgrades": {
+        "topSpeed": 1,
+        "acceleration": 1,
+        "handling": 1,
+        "nitroCapacity": 1
+      },
+      "passwordHash": "$2b$10$t5zw0hrHQFzJFjpPDSsYR.kb8OXfCFhZeqZyAFTNWSlcMkn.H17wG"
+    },
+    "gst_y5kbix6": {
+      "uid": "gst_y5kbix6",
+      "username": "Racer_9190",
+      "carColor": "#06b6d4",
+      "carModel": "Cyber GT",
+      "underglowColor": "#06b6d4",
+      "highScore": 0,
+      "totalDistance": 0,
+      "racesWon": 0,
+      "totalRaces": 0,
+      "coins": 150,
+      "upgrades": {
+        "topSpeed": 1,
+        "acceleration": 1,
+        "handling": 1,
+        "nitroCapacity": 1
+      }
+    },
+    "gst_yq8ered": {
+      "uid": "gst_yq8ered",
+      "username": "Racer_7570",
+      "carColor": "#eab308",
+      "carModel": "Cyber GT",
+      "underglowColor": "#06b6d4",
+      "highScore": 13872,
+      "totalDistance": 11927,
+      "racesWon": 0,
+      "totalRaces": 1,
+      "coins": 180,
+      "upgrades": {
+        "topSpeed": 1,
+        "acceleration": 1,
+        "handling": 1,
+        "nitroCapacity": 1
+      }
+    },
+    "gst_v47uswf": {
+      "uid": "gst_v47uswf",
+      "username": "GarageTester",
+      "carColor": "#eab308",
+      "carModel": "Apex Phantom",
+      "underglowColor": "#06b6d4",
+      "highScore": 3000,
+      "totalDistance": 2000,
+      "racesWon": 1,
+      "totalRaces": 1,
+      "coins": 650,
+      "unlockedCars": [
+        "Cyber GT",
+        "Apex Phantom"
+      ],
+      "upgrades": {
+        "topSpeed": 1,
+        "acceleration": 1,
+        "handling": 1,
+        "nitroCapacity": 1
+      }
+    }
+  },
+  "sessions": {
+    "tok_gst_877lu04satp": "gst_xgjpum9",
+    "tok_gst_jowap9s9ser": "gst_lni1zud",
+    "tok_gst_w47bfjvulz": "gst_r62jcgg",
+    "tok_gst_um7ayqbnln": "gst_0n7jxf5",
+    "tok_gst_fzqgzw1bdx": "gst_43jlb5f",
+    "tok_gst_sof1fnzz8z": "gst_r46uzku",
+    "tok_gst_qus4gdk3xo": "gst_vda5ke0",
+    "tok_gst_3ndj5d2yrir": "gst_mcsnk48",
+    "tok_u57as7om9xh7e9f07xh494": "usr_wlzb6a8muw9nnnu",
+    "tok_gst_an3n94zpy77": "gst_y5kbix6",
+    "tok_gst_bundv4thi1v": "gst_yq8ered",
+    "tok_gst_d3y6qcg3244": "gst_v47uswf"
+  },
+  "leaderboard": [
+    {
+      "id": "lb-1",
+      "userId": "bot-1",
+      "playerName": "ApexGhost_99",
+      "score": 18450,
+      "distance": 6200,
+      "carColor": "#ef4444",
+      "carModel": "Apex Phantom",
+      "mode": "multiplayer",
+      "date": "2026-10-06T00:36:43.663Z"
+    },
+    {
+      "id": "lb-2",
+      "userId": "bot-2",
+      "playerName": "NeonViper",
+      "score": 15200,
+      "distance": 5100,
+      "carColor": "#06b6d4",
+      "carModel": "Cyber GT",
+      "mode": "multiplayer",
+      "date": "2026-10-05T17:36:43.664Z"
+    },
+    {
+      "id": "lb_muw9uer52aj",
+      "userId": "gst_yq8ered",
+      "playerName": "Racer_7570",
+      "score": 13872,
+      "distance": 11927,
+      "carColor": "#eab308",
+      "carModel": "Cyber GT",
+      "mode": "single",
+      "date": "2026-10-06T06:02:13.169Z"
+    },
+    {
+      "id": "lb-3",
+      "userId": "bot-3",
+      "playerName": "DriftMasterX",
+      "score": 13800,
+      "distance": 4750,
+      "carColor": "#a855f7",
+      "carModel": "Hyperion Supercar",
+      "mode": "single",
+      "date": "2026-10-05T05:36:43.664Z"
+    },
+    {
+      "id": "lb-4",
+      "userId": "bot-4",
+      "playerName": "MidnightSpeed",
+      "score": 11400,
+      "distance": 3900,
+      "carColor": "#eab308",
+      "carModel": "Velocity Formula",
+      "mode": "single",
+      "date": "2026-10-04T23:36:43.664Z"
+    },
+    {
+      "id": "lb-5",
+      "userId": "bot-5",
+      "playerName": "CyberRacer_ID",
+      "score": 9600,
+      "distance": 3300,
+      "carColor": "#10b981",
+      "carModel": "Cyber GT",
+      "mode": "multiplayer",
+      "date": "2026-10-04T05:36:43.664Z"
+    },
+    {
+      "id": "lb_muw960xqhye",
+      "userId": "gst_lni1zud",
+      "playerName": "Racer_5315",
+      "score": 8124,
+      "distance": 8800,
+      "carColor": "#a855f7",
+      "carModel": "Cyber GT",
+      "mode": "single",
+      "date": "2026-10-06T05:44:46.419Z"
+    },
+    {
+      "id": "lb_muw9c8njocj",
+      "userId": "gst_mcsnk48",
+      "playerName": "Racer_1835",
+      "score": 6290,
+      "distance": 4078,
+      "carColor": "#a855f7",
+      "carModel": "Apex Phantom",
+      "mode": "single",
+      "date": "2026-10-06T05:54:42.866Z"
+    },
+    {
+      "id": "lb_muw9uydfzbj",
+      "userId": "gst_v47uswf",
+      "playerName": "GarageTester",
+      "score": 3000,
+      "distance": 2000,
+      "carColor": "#eab308",
+      "carModel": "Cyber GT",
+      "mode": "single",
+      "date": "2026-10-06T06:02:38.595Z"
+    }
+  ]
+}

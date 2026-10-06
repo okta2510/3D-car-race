@@ -1,0 +1,91 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with racing statistics and garage customization",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "displayName": { "type": "string", "maxLength": 50 },
+        "email": { "type": "string", "maxLength": 100 },
+        "carColor": { "type": "string", "maxLength": 20 },
+        "carModel": { "type": "string", "maxLength": 30 },
+        "highScore": { "type": "number" },
+        "totalDistance": { "type": "number" },
+        "racesWon": { "type": "number" },
+        "totalRaces": { "type": "number" },
+        "coins": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "displayName", "highScore", "totalDistance"]
+    },
+    "LeaderboardEntry": {
+      "title": "LeaderboardEntry",
+      "description": "Global leaderboard record for high score and distance",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "playerName": { "type": "string", "maxLength": 50 },
+        "score": { "type": "number" },
+        "distance": { "type": "number" },
+        "carColor": { "type": "string", "maxLength": 20 },
+        "mode": { "type": "string", "maxLength": 20 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "playerName", "score", "distance", "createdAt"]
+    },
+    "RaceRoom": {
+      "title": "RaceRoom",
+      "description": "Multiplayer race room session",
+      "type": "object",
+      "properties": {
+        "roomId": { "type": "string", "maxLength": 64 },
+        "hostId": { "type": "string", "maxLength": 128 },
+        "trackLength": { "type": "number" },
+        "seed": { "type": "number" },
+        "status": { "type": "string", "maxLength": 20, "enum": ["waiting", "countdown", "racing", "finished"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["roomId", "hostId", "status", "seed"]
+    },
+    "PlayerState": {
+      "title": "PlayerState",
+      "description": "Real-time synchronization state of a racer inside a room",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "displayName": { "type": "string", "maxLength": 50 },
+        "carColor": { "type": "string", "maxLength": 20 },
+        "posX": { "type": "number" },
+        "posZ": { "type": "number" },
+        "speed": { "type": "number" },
+        "isNitro": { "type": "boolean" },
+        "isCrashed": { "type": "boolean" },
+        "finished": { "type": "boolean" },
+        "finishTime": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "displayName", "posX", "posZ", "speed"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile with stats and customization"
+    },
+    "/leaderboard/{entryId}": {
+      "schema": "LeaderboardEntry",
+      "description": "Public global leaderboard records"
+    },
+    "/rooms/{roomId}": {
+      "schema": "RaceRoom",
+      "description": "Multiplayer race room metadata"
+    },
+    "/rooms/{roomId}/players/{playerId}": {
+      "schema": "PlayerState",
+      "description": "Real-time positional state of racers in a room"
+    }
+  }
+}
