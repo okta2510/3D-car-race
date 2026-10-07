@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 120" fill="none">
+  <!-- Green Prompt Symbol '>' -->
+  <path d="M18 22 L62 60 L18 98" stroke="#84cc16" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Green Cursor Symbol '_' -->
+  <rect x="76" y="86" width="50" height="15" rx="7.5" fill="#84cc16"/>
+</svg>

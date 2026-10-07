@@ -35,45 +35,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLogout,
   activeMode,
   onReturnToMenu,
-  onProfileUpdated
+  onProfileUpdated: _onProfileUpdated
 }) => {
   const [isMuted, setIsMuted] = React.useState(soundManager.getMuted());
-  
-  // Secret Cheat Code State (Click '+' 10 times to unlock 10,000 coins)
-  const [cheatClicks, setCheatClicks] = React.useState(0);
-  const [cheatToast, setCheatToast] = React.useState<string | null>(null);
-  const cheatTimerRef = React.useRef<any>(null);
 
   const handleToggleSound = () => {
     const muted = soundManager.toggleMute();
     setIsMuted(muted);
-  };
-
-  const handlePlusCheatClick = async () => {
-    if (cheatTimerRef.current) clearTimeout(cheatTimerRef.current);
-    const nextCount = cheatClicks + 1;
-    setCheatClicks(nextCount);
-
-    // Reset after 3 seconds of inactivity
-    cheatTimerRef.current = setTimeout(() => {
-      setCheatClicks(0);
-    }, 3000);
-
-    if (nextCount >= 10) {
-      setCheatClicks(0);
-      try {
-        const res = await api.claimCheatCoins();
-        if (onProfileUpdated) {
-          onProfileUpdated(res.user);
-        }
-        soundManager.playVictory();
-        setCheatToast('🎉 CHEAT ACTIVATED! +10,000 COINS!');
-        setTimeout(() => setCheatToast(null), 3500);
-      } catch (err: any) {
-        setCheatToast(err.message || 'Cheat failed');
-        setTimeout(() => setCheatToast(null), 3000);
-      }
-    }
   };
 
   return (
@@ -145,24 +113,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* User Account / Profile */}
           {user ? (
             <div className="flex items-center gap-2 pl-1 sm:pl-2 border-l border-slate-800">
-              {/* Coins badge with '+' button (secret cheat code: 10 clicks = +10,000 coins) */}
-              <div className="relative flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold">
+              {/* Coins badge */}
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold">
                 <Coins className="w-3.5 h-3.5 text-amber-400" />
                 <span>{user.coins.toLocaleString()}</span>
-                <button
-                  type="button"
-                  onClick={handlePlusCheatClick}
-                  title="Add Coins (+)"
-                  className="w-4 h-4 rounded bg-amber-400/20 hover:bg-amber-400/40 active:scale-90 text-amber-300 hover:text-white flex items-center justify-center font-black text-[11px] leading-none transition-transform cursor-pointer"
-                >
-                  +
-                </button>
-
-                {cheatToast && (
-                  <div className="absolute top-8 left-1/2 -translate-x-1/2 whitespace-nowrap px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 font-black text-[11px] shadow-[0_0_20px_rgba(245,158,11,0.9)] z-50 animate-bounce">
-                    {cheatToast}
-                  </div>
-                )}
               </div>
 
               {/* User Chip */}

@@ -192,8 +192,8 @@ export class Car3D {
       this.bodyMesh.receiveShadow = true;
     }
 
-    // --- HEADLIGHTS (Support High Beam / Dim mode) ---
-    const hlGeo = new THREE.BoxGeometry(0.4, 0.14, 0.1);
+    // --- HEADLIGHTS (Ultra-Bright High-Power Xenon Laser Beams) ---
+    const hlGeo = new THREE.BoxGeometry(0.42, 0.16, 0.12);
     const hlLeft = new THREE.Mesh(hlGeo, this.headlightMat);
     hlLeft.position.set(-0.75, 0.65, isFormula ? 3.0 : 2.2);
     const hlRight = new THREE.Mesh(hlGeo, this.headlightMat);
@@ -201,19 +201,33 @@ export class Car3D {
     this.group.add(hlLeft, hlRight);
     this.headlightMeshes.push(hlLeft, hlRight);
 
-    // Left SpotLight Projection Beam - ultra-bright high-power xenon flash beam
-    const spotLeft = new THREE.SpotLight(0xffffff, 26, 95, Math.PI / 4, 0.35, 1);
+    // Left SpotLight Projection Beam - ultra-bright high-power xenon flash beam (85 intensity, 160m range)
+    const spotLeft = new THREE.SpotLight(0xffffff, 85, 160, Math.PI / 3.4, 0.3, 1);
     spotLeft.position.set(-0.75, 0.7, isFormula ? 3.0 : 2.2);
-    spotLeft.target.position.set(-0.75, 0, 35);
+    spotLeft.target.position.set(-0.75, 0, 45);
     this.group.add(spotLeft, spotLeft.target);
     this.headLights.push(spotLeft);
 
-    // Right SpotLight Projection Beam - ultra-bright high-power xenon flash beam
-    const spotRight = new THREE.SpotLight(0xffffff, 26, 95, Math.PI / 4, 0.35, 1);
+    // Right SpotLight Projection Beam - ultra-bright high-power xenon flash beam (85 intensity, 160m range)
+    const spotRight = new THREE.SpotLight(0xffffff, 85, 160, Math.PI / 3.4, 0.3, 1);
     spotRight.position.set(0.75, 0.7, isFormula ? 3.0 : 2.2);
-    spotRight.target.position.set(0.75, 0, 35);
+    spotRight.target.position.set(0.75, 0, 45);
     this.group.add(spotRight, spotRight.target);
     this.headLights.push(spotRight);
+
+    // Forward Highway Illumination Carpet (Crisp bright light on asphalt ahead)
+    const beamGeo = new THREE.PlaneGeometry(16, 45);
+    const beamMat = new THREE.MeshBasicMaterial({
+      color: 0xe0f2fe,
+      transparent: true,
+      opacity: 0.28,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    const beamCarpet = new THREE.Mesh(beamGeo, beamMat);
+    beamCarpet.rotation.x = -Math.PI / 2;
+    beamCarpet.position.set(0, 0.04, 25);
+    this.group.add(beamCarpet);
 
     // --- REAR TAILLIGHTS ---
     const tailMat = new THREE.MeshBasicMaterial({ color: 0xff1133 });
@@ -329,14 +343,14 @@ export class Car3D {
     const isHigh = mode === 'high';
 
     this.headLights.forEach((spot) => {
-      spot.intensity = isHigh ? 26 : 9.0;
-      spot.distance = isHigh ? 95 : 45;
-      spot.angle = isHigh ? Math.PI / 4 : Math.PI / 6;
-      spot.penumbra = isHigh ? 0.35 : 0.5;
+      spot.intensity = isHigh ? 85 : 38;
+      spot.distance = isHigh ? 160 : 85;
+      spot.angle = isHigh ? Math.PI / 3.4 : Math.PI / 4.5;
+      spot.penumbra = isHigh ? 0.3 : 0.45;
     });
 
     if (this.headlightMat) {
-      this.headlightMat.color.setHex(isHigh ? 0xffffff : 0x94a3b8);
+      this.headlightMat.color.setHex(isHigh ? 0xffffff : 0xbae6fd);
     }
   }
 
