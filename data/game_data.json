@@ -185,26 +185,20 @@
     "gst_yq8ered": {
       "uid": "gst_yq8ered",
       "username": "Racer_7570",
-      "carColor": "#ef4444",
-      "carModel": "Hyperion Supercar",
-      "underglowColor": "#f59e0b",
-      "highScore": 16830,
-      "totalDistance": 28548,
+      "carColor": "#eab308",
+      "carModel": "Cyber GT",
+      "underglowColor": "#06b6d4",
+      "highScore": 13872,
+      "totalDistance": 11927,
       "racesWon": 0,
-      "totalRaces": 3,
-      "coins": 3740,
+      "totalRaces": 1,
+      "coins": 180,
       "upgrades": {
-        "topSpeed": 5,
-        "acceleration": 5,
+        "topSpeed": 1,
+        "acceleration": 1,
         "handling": 1,
         "nitroCapacity": 1
-      },
-      "unlockedCars": [
-        "Cyber GT",
-        "Velocity Formula",
-        "Apex Phantom",
-        "Hyperion Supercar"
-      ]
+      }
     },
     "gst_v47uswf": {
       "uid": "gst_v47uswf",
@@ -256,17 +250,6 @@
       "date": "2026-10-06T00:36:43.663Z"
     },
     {
-      "id": "lb_muw9uer52aj",
-      "userId": "gst_yq8ered",
-      "playerName": "Racer_7570",
-      "score": 16830,
-      "distance": 13763,
-      "carColor": "#eab308",
-      "carModel": "Cyber GT",
-      "mode": "single",
-      "date": "2026-10-06T15:54:53.862Z"
-    },
-    {
       "id": "lb-2",
       "userId": "bot-2",
       "playerName": "NeonViper",
@@ -276,6 +259,17 @@
       "carModel": "Cyber GT",
       "mode": "multiplayer",
       "date": "2026-10-05T17:36:43.664Z"
+    },
+    {
+      "id": "lb_muw9uer52aj",
+      "userId": "gst_yq8ered",
+      "playerName": "Racer_7570",
+      "score": 13872,
+      "distance": 11927,
+      "carColor": "#eab308",
+      "carModel": "Cyber GT",
+      "mode": "single",
+      "date": "2026-10-06T06:02:13.169Z"
     },
     {
       "id": "lb-3",

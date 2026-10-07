@@ -67,8 +67,6 @@ export interface RaceRoomInfo {
 export type ObstacleType = 
   | 'traffic_car' 
   | 'traffic_truck' 
-  | 'long_vehicle'
-  | 'ambulance'
   | 'barrier' 
   | 'oil_slick' 
   | 'nitro_pickup' 
@@ -77,15 +75,10 @@ export type ObstacleType =
 export interface ObstacleData {
   id: number;
   type: ObstacleType;
-  lane: number; // 0 to 4
+  lane: number; // -2, -1, 0, 1, 2
   x: number;
   z: number;
   speed?: number; // for moving traffic
   color?: string;
   collected?: boolean;
-  targetLane?: number;
-  targetX?: number;
-  isChangingLane?: boolean;
-  laneChangeTimer?: number;
-  sirenPhase?: number;
 }
